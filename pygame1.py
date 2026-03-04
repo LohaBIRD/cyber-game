@@ -3,6 +3,7 @@ import sys
 import random
 import os
 from pygame.locals import *
+import drone
 
 # Initialize Pygame
 try:
@@ -12,6 +13,7 @@ except pygame.error as e:
     print(f"Failed to initialize Pygame: {e}")
     sys.exit(1)
 
+drone.init_drone()
 # Initialize joystick
 joystick = None
 if pygame.joystick.get_count() > 0:
@@ -364,7 +366,8 @@ def main():
                             score += 1
                         else:
                             feedback = f"Incorrect. Correct was: {current_correct_answer}"
-                        
+                        drone.trigger_flight()
+    
                         state = 'feedback'
                         feedback_timer = 4000
                         
@@ -593,6 +596,7 @@ def main():
                             else:
                                 # Die from side or bottom touch
                                 died_this_frame = True
+                                drone.trigger_flight()
                                 hearts -= 1
                                 if hearts > 0:
                                     state = 'life_lost'
@@ -602,6 +606,7 @@ def main():
                         else:
                             # Other lethal blocks cause death
                             died_this_frame = True
+                            drone.trigger_flight()
                             hearts -= 1
                             if hearts > 0:
                                 state = 'life_lost'
@@ -871,10 +876,10 @@ def main():
 
         pygame.display.flip()
         clock.tick(60)
-
+    drone.disconnect_drone()
     pygame.quit()
     sys.exit()
 
 # This makes the file runnable
 if __name__ == "__main__":
-    main()
+    main()pip
