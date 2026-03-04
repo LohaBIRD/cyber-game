@@ -1,6 +1,7 @@
 # drone.py
 import threading
-from pyparrot.Minidrone import Mambo
+from pyparrot.Minidrone import Mambo 
+
 
 # Global variables to hold the drone state
 mambo = None
@@ -22,7 +23,7 @@ def _fly_drone_task():
     if drone_connected and mambo is not None:
         print("Drone taking off!")
         mambo.safe_takeoff(5) 
-        mambo.smart_sleep(2)  # Hover for 2 seconds
+        mambo.smart_sleep(4)  # Hover for 2 seconds
         print("Drone landing!")
         mambo.safe_land(5)
     else:
