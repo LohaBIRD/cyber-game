@@ -13,7 +13,6 @@ except pygame.error as e:
     print(f"Failed to initialize Pygame: {e}")
     sys.exit(1)
 
-drone.init_drone()
 # Initialize joystick
 joystick = None
 if pygame.joystick.get_count() > 0:
@@ -36,8 +35,6 @@ pygame.display.set_caption("Cybersecurity Firewall Protection Game")
 
 # Load background image
 try:
-    # IMPORTANT: You must have a 'background.jpg' file in the same folder
-    # or the background will be a solid blue color.
     background = pygame.image.load('actualgame/background.jpg').convert()
     background = pygame.transform.smoothscale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
 except (pygame.error, FileNotFoundError) as e:
@@ -52,7 +49,7 @@ except (pygame.error, FileNotFoundError) as e:
     print(f"Failed to load character image: {e}")
     character_image = None
 
-# Colors (Mario-style)
+# Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
@@ -67,26 +64,18 @@ GRASS_GREEN = (34, 139, 34)
 PIPE_GREEN = (0, 128, 0)
 BRICK_RED = (178, 34, 34)
 GRAY = (128, 128, 128)
-# NEW CYBER COLORS
 CYBER_DARK_BLUE = (0, 10, 30)
 CYBER_GRID_GREEN = (0, 50, 40)
 
-
-# Font (blocky for 80s feel)
+# Font
 try:
-    # CHANGED: Switched to a cleaner, "cyber" style font and increased size
     font = pygame.font.SysFont('Consolas', 28, bold=True)
     small_font = pygame.font.SysFont('Consolas', 22)
 except pygame.error as e:
-    print(f"Failed to load Consolas font, falling back to Courier New: {e}")
-    # Fallback if Consolas isn't on the system
+    print(f"Failed to load Consolas font: {e}")
     font = pygame.font.SysFont('Courier New', 24, bold=True)
     small_font = pygame.font.SysFont('Courier New', 18)
 
-
-# --- NEW, MORE INTERESTING QUESTIONS ---
-# The correct answer is ALWAYS the first one (index 0).
-# The code will shuffle them before showing the player.
 questions = [
     ("What is a 'Zero-Day Exploit'?", ["A vulnerability unknown to the software creator", "A bug found on the first day of release", "A virus that infects in zero seconds"]),
     ("What is a 'DDoS' attack?", ["Flooding a server with traffic to shut it down", "Deleting a server's data", "Stealing a server's identity"]),
@@ -110,14 +99,11 @@ def draw_text(text, font, color, x, y):
         text_surface = font.render(text, True, color)
         screen.blit(text_surface, (x, y))
     except pygame.error as e:
-        print(f"Failed to render text: {e}")
+        pass
 
-
-# NEW: Function to draw the cyber-themed background
 def draw_cyber_background(surface):
-    # Vertical purple gradient background
-    top_color = (75, 0, 130)  # Indigo purple
-    bottom_color = (138, 43, 226)  # Blue violet
+    top_color = (75, 0, 130)  
+    bottom_color = (138, 43, 226)  
     for y in range(SCREEN_HEIGHT):
         ratio = y / SCREEN_HEIGHT
         r = int(top_color[0] * (1 - ratio) + bottom_color[0] * ratio)
@@ -125,28 +111,26 @@ def draw_cyber_background(surface):
         b = int(top_color[2] * (1 - ratio) + bottom_color[2] * ratio)
         pygame.draw.line(surface, (r, g, b), (0, y), (SCREEN_WIDTH, y))
 
-
 def draw_hearts(hearts, x, y):
     for i in range(3):
         heart_x = x + i * 30
         if i < hearts:
-            # Draw heart shape: two circles and a triangle
             pygame.draw.circle(screen, RED, (heart_x + 5, y - 5), 5)
             pygame.draw.circle(screen, RED, (heart_x + 15, y - 5), 5)
             pygame.draw.polygon(screen, RED, [(heart_x, y), (heart_x + 10, y - 10), (heart_x + 20, y)])
         else:
-            # Draw empty heart
             pygame.draw.circle(screen, BLACK, (heart_x + 5, y - 5), 5, 1)
             pygame.draw.circle(screen, BLACK, (heart_x + 15, y - 5), 5, 1)
             pygame.draw.polygon(screen, BLACK, [(heart_x, y), (heart_x + 10, y - 10), (heart_x + 20, y)], 1)
+
+# Initialize drone BEFORE the game starts running
+drone.init_drone()
 
 def main():
     clock = pygame.time.Clock()
     running = True
     state = 'question'
     
-    # NEW: Variables to hold the *current* question, its shuffled options,
-    # and the text of the correct answer.
     current_question_text = ""
     current_options = []
     current_correct_answer = ""
@@ -155,9 +139,6 @@ def main():
     hearts = 3
     feedback = ''
     feedback_timer = 0
-    blinking_feedback = ''
-    blink_timer = 0
-    game_restart = False
     character_x = 100
     character_speed = 5
     ground = SCREEN_HEIGHT - 100
@@ -173,13 +154,11 @@ def main():
     invincible_timer = 0
     fallen_into_hole = False
 
-    # Dynamic level elements for endless generation
     platforms = []
     lethal_blocks = []
     holes = []
     question_circles = [] 
 
-    # Initialize first section
     section_length = 800
     def generate_section(start_x):
         section_platforms = []
@@ -215,7 +194,6 @@ def main():
                 platform_y = random.choice([ground - 50, ground - 100, ground - 150, ground - 200])
                 new_rect = pygame.Rect(x, platform_y, platform_width, platform_height)
                 overlap = any(new_rect.colliderect(pygame.Rect(b[0], b[1], b[2], b[3])) for b in all_blocks)
-                # Check if platform would be above a hole
                 hole_overlap = any(hole_x <= x < hole_x + hole_width or x <= hole_x < x + platform_width for hole_x, hole_width in section_holes)
                 if not overlap and not hole_overlap:
                     section_platforms.append([x, platform_y, platform_width, platform_height, choice, 0])
@@ -291,30 +269,21 @@ def main():
         camera_x = 0
         platforms, lethal_blocks, holes, question_circles = generate_section(0)
         current_max_x = section_length
-        invincible_timer = 600  # 10 seconds of invincibility at 60fps
+        invincible_timer = 600
         fallen_into_hole = False
 
-    # Generate initial sections
     platforms, lethal_blocks, holes, question_circles = generate_section(0)
     current_max_x = section_length
 
     while running:
-        # Get time elapsed this frame, used for timers
         delta_time = clock.get_time()
-
         keys = pygame.key.get_pressed()
         
-        # --- ROBUST SCREEN CLEARING ---
         if state == 'question' or state == 'popup_question' or state == 'feedback':
-            # CHANGED: Always use new cyber background function
             draw_cyber_background(screen)
         else:
-            # For 'life_lost', 'game_over'
-            # This fill(BLACK) erases any "stuck body" artifacts.
             screen.fill(BLACK) 
 
-        # --- DRAW GROUND ---
-        # Only draw these if we are in a game state
         if state == 'question' or state == 'popup_question' or state == 'feedback':
             current_x = 0
             sorted_holes = sorted(holes, key=lambda h: h[0])
@@ -328,12 +297,11 @@ def main():
             if current_x < SCREEN_WIDTH:
                 pygame.draw.rect(screen, GRASS_GREEN, (current_x, ground, SCREEN_WIDTH - current_x, 20))
 
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE: # Added an escape key to quit
+                if event.key == pygame.K_ESCAPE: 
                     running = False
                 if state == 'question':
                     if event.key == pygame.K_SPACE and on_ground:
@@ -348,7 +316,6 @@ def main():
                         want_to_fall = True
                         on_ground = False
                 
-                # --- NEW ANSWER-CHECKING LOGIC ---
                 elif state == 'popup_question':
                     selected = -1
                     if event.key == pygame.K_1 or event.key == pygame.K_a:
@@ -359,19 +326,16 @@ def main():
                         selected = 2
                     
                     if selected != -1:
-                        # Check the *text* of the answer, not the index
                         selected_answer_text = current_options[selected]
                         if selected_answer_text == current_correct_answer:
                             feedback = "Correct!"
                             score += 1
                         else:
                             feedback = f"Incorrect. Correct was: {current_correct_answer}"
-                        drone.trigger_flight()
-    
+                            drone.trigger_flight() # Drone trigger on wrong answer
+                        
                         state = 'feedback'
                         feedback_timer = 4000
-                        
-                # CHANGED: Removed key handling for 'feedback' state
                 
                 elif state == 'life_lost':
                     if event.key == pygame.K_r:
@@ -380,49 +344,43 @@ def main():
                 elif state == 'game_over':
                     if event.key == pygame.K_r:
                         state = 'question'
-                        # Reset all game variables
                         score = 0
                         hearts = 3
                         feedback = ''
                         feedback_timer = 0
-                        level_reset() # This resets player pos, platforms, etc.
+                        level_reset() 
                     elif event.key == pygame.K_q:
                         running = False
+
             elif event.type == pygame.JOYBUTTONDOWN and joystick:
                 if state == 'question':
                     if event.button == 0:
                         character_vy = jump_power
                         on_ground = False
                 
-                # --- NEW ANSWER-CHECKING LOGIC (JOYSTICK) ---
                 elif state == 'popup_question':
                     selected = -1
-                    if event.button == 0: # K1
+                    if event.button == 0: 
                         selected = 0
-                    elif event.button == 1: # K2
+                    elif event.button == 1: 
                         selected = 1
-                    elif event.button == 2: # K3
+                    elif event.button == 2: 
                         selected = 2
                     
                     if selected != -1:
-                        # Check the *text* of the answer, not the index
                         selected_answer_text = current_options[selected]
                         if selected_answer_text == current_correct_answer:
                             feedback = "Correct!"
                             score += 1
                         else:
                             feedback = f"Incorrect. Correct was: {current_correct_answer}"
+                            drone.trigger_flight() # Drone trigger on wrong answer
                         
                         state = 'feedback'
                         feedback_timer = 4000
-                
-                # CHANGED: Removed button handling for 'feedback' state
 
-        # Character movement
-        # CHANGED: Only update physics if in 'question' state
         if state == 'question':
             died_this_frame = False
-
             if invincible_timer > 0:
                 invincible_timer -= 1
 
@@ -431,10 +389,6 @@ def main():
                 new_x -= character_speed
             if keys[pygame.K_RIGHT] or (joystick and joystick.get_axis(0) > 0.5):
                 new_x += character_speed
-
-            if on_ground:
-                # Remove blocking of horizontal movement to allow falling into holes naturally
-                pass
 
             can_move = True
             character_rect = pygame.Rect(new_x - camera_x, character_y, 20, 50)
@@ -478,36 +432,29 @@ def main():
                             p[5] = -p[5]
             for l in lethal_blocks:
                 if len(l) > 5 and l[4] == 'goomba':
-                    # Check if about to walk over hole; if so reverse direction
-                    # Check holes that intersect goomba's feet area at next step
                     next_x = l[0] + l[5]
                     goomba_rect_next = pygame.Rect(next_x, l[1], l[2], l[3])
                     will_fall = False
                     for h in holes:
                         hole_x, hole_width = h
                         hole_rect = pygame.Rect(hole_x, ground, hole_width, 20)
-                        # If next step goomba feet will be over hole (feet y is l[1] + l[3], roughly ground level)
                         if goomba_rect_next.colliderect(hole_rect):
                             will_fall = True
                             break
                     if will_fall:
-                        l[5] = -l[5]  # Reverse direction to avoid falling
+                        l[5] = -l[5] 
                     else:
-                        # Check edges of holes around goomba to not get stuck walking right on the edge
                         safe_to_move = True
                         for h in holes:
                             hole_x, hole_width = h
                             if (l[0] + l[2] > hole_x and l[0] < hole_x + hole_width):
-                                # If goomba is overlapping hole edges horizontally
-                                # Reverse direction to avoid stuck or walking on air
                                 safe_to_move = False
                                 break
                         if safe_to_move:
                             l[0] += l[5]
                         else:
-                            l[5] = -l[5]  # Reverse to avoid hovering on edge
+                            l[5] = -l[5]  
                         if len(l) > 7:
-                            # Reverse direction only if fully within limits to avoid moving past boundaries
                             if l[0] <= l[6]:
                                 l[0] = l[6]
                                 l[5] = -l[5]
@@ -578,25 +525,20 @@ def main():
                     on_ground = False
             character_x += platform_speed
 
-            # Check for collision with lethal blocks (goombas, pipes)
             if not died_this_frame:
                 for block in lethal_blocks:
                     block_rect = pygame.Rect(block[0] - camera_x, block[1], block[2], block[3])
                     character_rect = pygame.Rect(character_x - camera_x, character_y, 20, 50)
                     if character_rect.colliderect(block_rect) and invincible_timer <= 0:
                         if len(block) > 4 and block[4] == 'goomba':
-                            # Check if landing on top (falling onto goomba)
-                            # A more robust check for stomping: if falling, and the feet in the *previous frame* were above the goomba.
                             if character_vy > 0 and (character_y - character_vy + 50) <= block[1]:
-                                # Kill goomba and bounce character
                                 lethal_blocks.remove(block)
-                                character_vy = jump_power * 0.75  # Increase bounce strength slightly
+                                character_vy = jump_power * 0.75  
                                 can_double_jump = True
-                                break  # Exit loop after handling
+                                break  
                             else:
-                                # Die from side or bottom touch
                                 died_this_frame = True
-                                drone.trigger_flight()
+                                drone.trigger_flight() # Drone trigger on Goomba Death
                                 hearts -= 1
                                 if hearts > 0:
                                     state = 'life_lost'
@@ -604,9 +546,8 @@ def main():
                                     state = 'game_over'
                                 break
                         else:
-                            # Other lethal blocks cause death
                             died_this_frame = True
-                            drone.trigger_flight()
+                            drone.trigger_flight() # Drone trigger on Pipe Death
                             hearts -= 1
                             if hearts > 0:
                                 state = 'life_lost'
@@ -614,10 +555,7 @@ def main():
                                 state = 'game_over'
                             break
 
-            # Check if fell underneath floor line by 100 pixels
-            # If character's head is below ground level, check if they are inside a hole
             if character_y > ground:
-                # Check if character's center is horizontally inside any hole
                 player_center_x = character_x + 10
                 for h in holes:
                     hole_x, hole_width = h
@@ -625,12 +563,12 @@ def main():
                         fallen_into_hole = True
                         break
 
-            # Fallback for falling completely off-screen
             if character_y > ground + 200:
                 fallen_into_hole = True
 
             if fallen_into_hole and character_y > ground + 200 and not died_this_frame and invincible_timer <= 0:
                 died_this_frame = True
+                drone.trigger_flight() # Drone trigger on falling into a hole
                 hearts -= 1
                 if hearts > 0:
                     state = 'life_lost'
@@ -646,28 +584,19 @@ def main():
 
                     if player_rect_world.colliderect(circle_rect_world):
                         state = 'popup_question'
-                        question_circles.pop(i) # Remove it
+                        question_circles.pop(i) 
                         
-                        # --- NEW: Question Selection & Shuffling Logic ---
                         q_tuple = questions[random.randint(0, len(questions) - 1)]
                         current_question_text = q_tuple[0]
-                        # Make a *copy* of the options to shuffle
                         current_options = list(q_tuple[1]) 
-                        current_correct_answer = q_tuple[1][0] # Store correct answer text
-                        random.shuffle(current_options) # Shuffle the copy
-                        # --- End of new logic ---
+                        current_correct_answer = q_tuple[1][0] 
+                        random.shuffle(current_options) 
                         break
 
-        # Draw score
         draw_text(f"SCORE: {score}", small_font, YELLOW, 10, 10)
-        # Draw hearts
         draw_hearts(hearts, SCREEN_WIDTH - 100, 10)
 
-        # --- DRAWING LOGIC ---
-        
-        # This 'if' draws the game world (platforms, goombas, etc.)
         if state == 'question' or state == 'popup_question' or state == 'feedback':
-            
             for block in platforms:
                 x, y, w, h, typ = block[0], block[1], block[2], block[3], block[4]
                 x = x - camera_x
@@ -683,7 +612,6 @@ def main():
                     pygame.draw.circle(screen, BLACK, (x + w - 10, y + h), 5)
                 elif typ == 'branch':
                     pygame.draw.rect(screen, BROWN, (x, y, w, h))
-                    # REMOVED: The "leaf" circle
                 elif typ == 'moving':
                     pygame.draw.rect(screen, CYAN, (x, y, w, h))
                     pygame.draw.line(screen, BLACK, (x, y + h//2), (x + w, y + h//2), 1)
@@ -714,29 +642,21 @@ def main():
                 else:
                     pygame.draw.rect(screen, RED, (x, y, w, h))
             
-            # This 'if' only draws the character
             if state == 'question':
                 if character_image:
                     screen.blit(character_image, (character_x - camera_x, character_y))
                 else:
-                    # Fallback: Draw character (Horse chess piece style)
                     pygame.draw.rect(screen, BROWN, (character_x - camera_x, character_y, 20, 20))
-                    # Head
                     pygame.draw.circle(screen, WHITE, (character_x - camera_x + 10, character_y - 10), 8)
-                    # Neck
                     pygame.draw.line(screen, BLACK, (character_x - camera_x + 10, character_y - 2), (character_x - camera_x + 10, character_y - 10), 2)
-                    # Legs
                     pygame.draw.line(screen, BLACK, (character_x - camera_x + 2, character_y + 20), (character_x - camera_x + 2, character_y + 50), 2)
                     pygame.draw.line(screen, BLACK, (character_x - camera_x + 8, character_y + 20), (character_x - camera_x + 8, character_y + 50), 2)
                     pygame.draw.line(screen, BLACK, (character_x - camera_x + 12, character_y + 20), (character_x - camera_x + 12, character_y + 50), 2)
                     pygame.draw.line(screen, BLACK, (character_x - camera_x + 18, character_y + 20), (character_x - camera_x + 18, character_y + 50), 2)
-                    # Mane
                     pygame.draw.line(screen, BLACK, (character_x - camera_x + 5, character_y - 15), (character_x - camera_x + 5, character_y - 5), 2)
                     pygame.draw.line(screen, BLACK, (character_x - camera_x + 15, character_y - 15), (character_x - camera_x + 15, character_y - 5), 2)
-                    # Tail
                     pygame.draw.line(screen, BLACK, (character_x - camera_x, character_y + 10), (character_x - camera_x - 5, character_y + 15), 2)
         
-        # This 'if' draws the popup window
         if state == 'popup_question':
             overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 180)) 
@@ -749,7 +669,6 @@ def main():
             pygame.draw.rect(screen, BLUE, (box_x, box_y, box_width, box_height))
             pygame.draw.rect(screen, WHITE, (box_x, box_y, box_width, box_height), 5)
 
-            # --- Use the NEW variables ---
             q = current_question_text
             opts = current_options
             
@@ -764,7 +683,7 @@ def main():
                 else:
                     lines.append(current_line)
                     current_line = word + " "
-            lines.append(current_line) # Add the last line
+            lines.append(current_line) 
             
             line_y = box_y + 60
             for line in lines:
@@ -780,12 +699,12 @@ def main():
                 current_line = ""
                 for word in words:
                     test_line = current_line + word + " "
-                    if font.size(test_line)[0] < box_width - 80: # 40px padding each side
+                    if font.size(test_line)[0] < box_width - 80:
                         current_line = test_line
                     else:
                         lines.append(current_line)
-                        current_line = "  " + word + " " # Indent wrapped lines
-                lines.append(current_line) # Add the last line
+                        current_line = "  " + word + " "
+                lines.append(current_line)
                 
                 for line in lines:
                     if opt_y < (box_y + box_height - 90): 
@@ -796,28 +715,23 @@ def main():
             
             footer_y = box_y + box_height - 90
             pygame.draw.rect(screen, BLACK, (box_x, footer_y, box_width, 90))
-            pygame.draw.rect(screen, WHITE, (box_x, footer_y, box_width, 90), 2) # Border for footer
+            pygame.draw.rect(screen, WHITE, (box_x, footer_y, box_width, 90), 2) 
 
             draw_text("Press 1, 2, or 3 to Answer", font, YELLOW, box_x + 20, footer_y + 40)
             if joystick:
                 draw_text("Joystick: K1, K2, or K3 to Answer", font, CYAN, box_x + 20, footer_y + 10)
 
-        # CHANGED: This is the new feedback logic
         elif state == 'feedback':
-            # Timer countdown
             feedback_timer -= delta_time
             if feedback_timer <= 0:
-                state = 'question' # Go back to game
+                state = 'question' 
             
-            # --- NEW: Text wrapping for feedback ---
             feedback_color = RED if "Incorrect" in feedback else GREEN
             
-            # Draw a dark box behind the text for readability
             box_width = SCREEN_WIDTH * 0.8
             box_x = (SCREEN_WIDTH - box_width) / 2
             box_y = 250
             
-            # Wrap the feedback text
             words = feedback.split()
             lines = []
             current_line = ""
@@ -828,35 +742,29 @@ def main():
                 else:
                     lines.append(current_line)
                     current_line = word + " "
-            lines.append(current_line) # Add the last line
+            lines.append(current_line) 
 
-            # Calculate box height based on lines
             text_height = len(lines) * 30
-            box_height = text_height + 40 # Add padding
-            box_y = (SCREEN_HEIGHT - box_height - 80) // 2 # Center it, leaving room for timer
+            box_height = text_height + 40 
+            box_y = (SCREEN_HEIGHT - box_height - 80) // 2 
             
             pygame.draw.rect(screen, BLACK, (box_x - 10, box_y - 10, box_width + 20, box_height + 20))
             pygame.draw.rect(screen, feedback_color, (box_x - 10, box_y - 10, box_width + 20, box_height + 20), 2)
             
-            # Draw the wrapped lines
             line_y = box_y + 20
             for line in lines:
                 line_surface = font.render(line, True, feedback_color)
                 line_width = line_surface.get_size()[0]
-                line_x = (SCREEN_WIDTH - line_width) // 2 # Center each line
+                line_x = (SCREEN_WIDTH - line_width) // 2 
                 draw_text(line, font, feedback_color, line_x, line_y)
                 line_y += 30
             
-            # Draw timer bar below the text
             timer_bar_y = box_y + box_height + 30
-            timer_bar_width = (feedback_timer / 4000) * (SCREEN_WIDTH * 0.5) # 4000ms = 4s
+            timer_bar_width = (feedback_timer / 4000) * (SCREEN_WIDTH * 0.5) 
             timer_bar_x = (SCREEN_WIDTH * 0.25)
             pygame.draw.rect(screen, WHITE, (timer_bar_x - 2, timer_bar_y - 2, (SCREEN_WIDTH * 0.5) + 4, 24))
             pygame.draw.rect(screen, BLACK, (timer_bar_x, timer_bar_y, SCREEN_WIDTH * 0.5, 20))
             pygame.draw.rect(screen, YELLOW, (timer_bar_x, timer_bar_y, timer_bar_width, 20))
-            # --- End of new feedback drawing ---
-
-
 
         elif state == 'life_lost':
             life_lost_surface = font.render("LIFE LOST!", True, RED)
@@ -876,10 +784,10 @@ def main():
 
         pygame.display.flip()
         clock.tick(60)
+        
     drone.disconnect_drone()
     pygame.quit()
     sys.exit()
 
-# This makes the file runnable
 if __name__ == "__main__":
     main()
