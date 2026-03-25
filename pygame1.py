@@ -124,7 +124,14 @@ def draw_hearts(hearts, x, y):
             pygame.draw.polygon(screen, BLACK, [(heart_x, y), (heart_x + 10, y - 10), (heart_x + 20, y)], 1)
 
 # Initialize drone BEFORE the game starts running
-drone.init_drone()
+drone_connected = False
+
+try:
+    drone.init_drone()
+    drone_connected = True
+    print("Drone connected 🚁")
+except Exception as e:
+    print("Drone NOT connected, continuing without it:", e)
 
 def main():
     clock = pygame.time.Clock()

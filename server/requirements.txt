@@ -1,4 +1,6 @@
 flask
 flask-socketio
+gunicorn
 eventlet
-requests
+psycopg2-binary
+python-dotenv
