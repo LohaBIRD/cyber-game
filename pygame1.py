@@ -5,6 +5,8 @@ import os
 from pygame.locals import *
 import drone
 
+API_URL = "https://leaderboard-api-e1y7.onrender.com"
+
 # Initialize Pygame
 try:
     pygame.init()
@@ -349,6 +351,9 @@ def main():
                         level_reset()
                         state = 'question'
                 elif state == 'game_over':
+                    if not score_sent:
+                      submit_score(player_name, score)
+                      score_sent = True
                     if event.key == pygame.K_r:
                         state = 'question'
                         score = 0

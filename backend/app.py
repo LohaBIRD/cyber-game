@@ -65,6 +65,7 @@ def home():
 # ➕ Submit score
 @app.route("/submit_score", methods=["POST"])
 def submit_score():
+    print("Sending score:", player, score)
     data = request.get_json()
 
     if not data or "user" not in data or "score" not in data:
