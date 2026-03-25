@@ -351,9 +351,6 @@ def main():
                         level_reset()
                         state = 'question'
                 elif state == 'game_over':
-                    if not score_sent:
-                      submit_score(player_name, score)
-                      score_sent = True
                     if event.key == pygame.K_r:
                         state = 'question'
                         score = 0
