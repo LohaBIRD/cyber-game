@@ -1,5 +1,10 @@
 import threading
-from pyparrot.Minidrone import Mambo 
+try:
+    from pyparrot.Minidrone import Mambo
+    DRONE_AVAILABLE = True
+except:
+    print("pyparrot not installed → drone disabled")
+    DRONE_AVAILABLE = False
 
 # Global variables to hold the drone state
 mambo = None
