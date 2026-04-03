@@ -8,6 +8,25 @@ import drone
 API_URL = "https://leaderboard-api-e1y7.onrender.com"
 
 # Initialize Pygame
+def submit_score(player, score):
+    def send():
+        try:
+            print("Sending score to:", API_URL)
+
+            res = requests.post(
+                f"{API_URL}/submit_score",
+                json={"user": player, "score": score},
+                timeout=3
+            )
+
+            print("STATUS:", res.status_code)
+            print("RESPONSE:", res.text)
+
+        except Exception as e:
+            print("FAILED REQUEST:", e)
+
+    threading.Thread(target=send).start()
+    
 try:
     pygame.init()
     pygame.joystick.init()
