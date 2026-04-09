@@ -10,7 +10,7 @@ import psycopg2
 # ✅ Load environment variables FIRST
 load_dotenv()
 
-DATABASE_URL = os.getenv("https://leaderboard-api-e1y7.onrender.com")
+DATABASE_URL = os.getenv("postgresql://neondb_owner:npg_6iORorEfVZ0N@ep-winter-king-abm8qnkd-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
 
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL is not set. Check your environment variables.")
