@@ -4,10 +4,11 @@ import random
 import os
 from pygame.locals import *
 import drone
+import requests 
+import threading 
 
 API_URL = "https://leaderboard-api-e1y7.onrender.com"
 
-# Initialize Pygame
 def submit_score(player, score):
     def send():
         try:
@@ -26,6 +27,19 @@ def submit_score(player, score):
             print("FAILED REQUEST:", e)
 
     threading.Thread(target=send).start()
+
+
+def get_leaderboard():
+    try:
+        response = requests.get(f"{API_URL}/leaderboard", timeout=3)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print("Leaderboard error:", response.text)
+            return []
+    except Exception as e:
+        print("Failed to fetch leaderboard:", e)
+        return []
     
 try:
     pygame.init()
@@ -156,8 +170,8 @@ except Exception as e:
 
 def main():
     clock = pygame.time.Clock()
-    running = True
-    state = 'question'
+    leaderboard = []
+    last_fetch_time = 0     
     
     current_question_text = ""
     current_options = []
