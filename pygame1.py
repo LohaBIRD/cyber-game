@@ -171,8 +171,11 @@ except Exception as e:
 def main():
     clock = pygame.time.Clock()
     leaderboard = []
-    last_fetch_time = 0     
-    
+    last_fetch_time = 0
+    running = True    
+    state = 'question' 
+    score_sent = False
+
     current_question_text = ""
     current_options = []
     current_correct_answer = ""
@@ -316,13 +319,19 @@ def main():
 
     platforms, lethal_blocks, holes, question_circles = generate_section(0)
     current_max_x = section_length
-
+    
     while running:
+
+        if state == 'game_over' and not score_sent:
+            print("🔥 Sending score:", score)
+            submit_score("player1", score)
+            score_sent = True
+
         delta_time = clock.get_time()
         keys = pygame.key.get_pressed()
         
         if state == 'question' or state == 'popup_question' or state == 'feedback':
-            draw_cyber_background(screen)
+            screen.fill((0, 100, 200))  # blue color
         else:
             screen.fill(BLACK) 
 
@@ -586,6 +595,7 @@ def main():
                                     state = 'life_lost'
                                 else:
                                     state = 'game_over'
+                                    score_sent = False
                                 break
                         else:
                             died_this_frame = True
@@ -595,6 +605,7 @@ def main():
                                 state = 'life_lost'
                             else:
                                 state = 'game_over'
+                                score_sent = False
                             break
 
             if character_y > ground:
