@@ -3,10 +3,11 @@ import eventlet
 eventlet.monkey_patch()
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
 import psycopg2
-from flask_cors import CORS
+
 
 # ✅ Load environment variables FIRST
 load_dotenv()
