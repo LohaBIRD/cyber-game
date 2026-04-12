@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cyber Leaderboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1 class="title">⚡ CYBER ARCADE ⚡</h1>
+
+<div id="leaderboard"></div>
+
+<script>
+async function loadLeaderboard() {
+    const res = await fetch("https://leaderboard-api-e1y7.onrender.com/leaderboard");
+    const data = await res.json();
+
+    const container = document.getElementById("leaderboard");
+    container.innerHTML = "";
+
+    data.forEach((entry, index) => {
+        const row = document.createElement("div");
+        row.className = "entry";
+
+        row.innerHTML = `
+            <span class="rank">#${index + 1}</span>
+            <span class="name">${entry.user}</span>
+            <span class="score">${entry.score}</span>
+        `;
+
+        container.appendChild(row);
+    });
+}
+
+// refresh every 5 seconds 🔥
+setInterval(loadLeaderboard, 5000);
+
+loadLeaderboard();
+</script>
+
+</body>
+</html>
+
+<style>
+
+body {
+    background: radial-gradient(circle, #050510, #000000);
+    font-family: monospace;
+    color: #00ffe1;
+    text-align: center;
+}
+
+.title {
+    font-size: 3rem;
+    color: #ff00ff;
+    text-shadow: 0 0 20px #ff00ff, 0 0 40px #ff00ff;
+}
+
+.entry {
+    display: flex;
+    justify-content: space-between;
+    margin: 12px auto;
+    padding: 15px;
+    width: 60%;
+
+    border: 1px solid #00ffe1;
+    box-shadow: 0 0 15px #00ffe1;
+
+    background: rgba(0,255,255,0.05);
+    backdrop-filter: blur(4px);
+
+    transition: 0.25s;
+}
+
+.entry:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px #ff00ff;
+}
+
+.rank {
+    color: gold;
+    font-weight: bold;
+}
+
+.name {
+    flex: 1;
+    text-align: left;
+    padding-left: 20px;
+}
+
+.score {
+    color: #00ff88;
+    font-weight: bold;
+}
+</style>

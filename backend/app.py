@@ -81,7 +81,7 @@ def submit_score():
     try:
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO scores (player_name, score) VALUES (%s, %s)",
+            "INSERT INTO scores (username, score) VALUES (%s, %s)",
             (username, score)
         )
         conn.commit()
