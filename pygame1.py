@@ -211,6 +211,7 @@ def main():
     lethal_blocks = []
     holes = []
     question_circles = [] 
+    character_width = 20
 
     section_length = 800
     def generate_section(start_x):
@@ -327,6 +328,15 @@ def main():
 
     platforms, lethal_blocks, holes, question_circles = generate_section(0)
     current_max_x = section_length
+
+    def is_character_over_hole():
+        character_left = character_x
+        character_right = character_x + character_width
+        for hole_x, hole_width in holes:
+            hole_right = hole_x + hole_width
+            if character_right > hole_x and character_left < hole_right:
+                return True
+        return False
     
     while running:
         
@@ -567,20 +577,9 @@ def main():
                         character_y = p[1] + p[3]
                         character_vy = 0
                         break
-                in_hole = False
-                for h in holes:
-                    hole_x, hole_width = h
-                    if hole_x <= character_x and character_x + 20 <= hole_x + hole_width:
-                        in_hole = True
-                        break
                 character_vy += gravity
                 character_y += character_vy
-                over_ground = True
-                for h in holes:
-                    hole_x, hole_width = h
-                    if hole_x <= character_x and character_x + 20 <= hole_x + hole_width:
-                        over_ground = False
-                        break
+                over_ground = not is_character_over_hole()
                 if over_ground and character_y + 50 >= ground:
                     character_y = ground - 50
                     character_vy = 0
@@ -596,12 +595,7 @@ def main():
                         character_y = p[1] - 50
                         break
                 if not standing_on_something:
-                    over_ground = True
-                    for h in holes:
-                        hole_x, hole_width = h
-                        if hole_x <= character_x and character_x + 20 <= hole_x + hole_width:
-                            over_ground = False
-                            break
+                    over_ground = not is_character_over_hole()
                     if over_ground and character_y + 50 >= ground and character_y + 50 <= ground + 10:
                         standing_on_something = True
                         character_y = ground - 50
@@ -641,13 +635,8 @@ def main():
                                 score_sent = False
                             break
 
-            if character_y > ground:
-                player_center_x = character_x + 10
-                for h in holes:
-                    hole_x, hole_width = h
-                    if hole_x < player_center_x < hole_x + hole_width:
-                        fallen_into_hole = True
-                        break
+            if character_y > ground and is_character_over_hole():
+                fallen_into_hole = True
 
             if character_y > ground + 200:
                 fallen_into_hole = True
