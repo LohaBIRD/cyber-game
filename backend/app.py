@@ -67,7 +67,7 @@ def submit_score():
         return jsonify({"error": "No data provided"}), 400
 
     username = data.get("user")
-    score = data.get("score")
+    score = int(data.get("score"))
 
     if username is None or score is None:
         return jsonify({"error": "Missing user or score"}), 400

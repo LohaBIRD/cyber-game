@@ -17,10 +17,18 @@ async function loadLeaderboard() {
 
     const container = document.getElementById("leaderboard");
     container.innerHTML = "";
+    if (data.length === 0) {
+    container.innerHTML = "<p class='empty'>NO PLAYERS YET... BE THE FIRST ⚡</p>";
+    return;
+}
 
-    data.forEach((entry, index) => {
-        const row = document.createElement("div");
-        row.className = "entry";
+        data.forEach((entry, index) => {
+    const row = document.createElement("div");
+    row.className = "entry";
+
+    if (index === 0) row.classList.add("gold");
+    if (index === 1) row.classList.add("silver");
+    if (index === 2) row.classList.add("bronze");
 
         row.innerHTML = `
             <span class="rank">#${index + 1}</span>
@@ -91,5 +99,37 @@ body {
 .score {
     color: #00ff88;
     font-weight: bold;
+}
+
+.empty {
+    color: #ff00ff;
+    font-size: 1.5rem;
+    text-shadow: 0 0 10px #ff00ff;
+    margin-top: 50px;
+}
+
+.gold {
+    border-color: gold;
+    box-shadow: 0 0 20px gold;
+}
+
+.silver {
+    border-color: silver;
+    box-shadow: 0 0 20px silver;
+}
+
+.bronze {
+    border-color: #cd7f32;
+    box-shadow: 0 0 20px #cd7f32;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 10px #00ffe1; }
+    50% { box-shadow: 0 0 25px #ff00ff; }
+    100% { box-shadow: 0 0 10px #00ffe1; }
+}
+
+.entry {
+    animation: pulse 2s infinite;
 }
 </style>
