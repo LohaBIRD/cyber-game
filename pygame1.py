@@ -373,7 +373,7 @@ def main():
             if state == "start":
                 if event.type == pygame.KEYDOWN:
 
-                    if event.unicode.isdigit():
+                    if event.unicode.isdigit() and len(player_number) < 4:
                         player_number += event.unicode
 
                     elif event.key == pygame.K_BACKSPACE:
@@ -683,7 +683,7 @@ def main():
 
             title = font.render("DRONE ATTACK", True, (255, 255, 255))
             input_text = font.render("Player" + player_number, True, (0, 255, 0))
-            hint = small_font.render("Enter numbers - Press ENTER", True, (200, 200, 200))
+            hint = small_font.render("Enter up to 4 numbers - Press ENTER", True, (200, 200, 200))
 
             screen.blit(title, (SCREEN_WIDTH//2 - 250, 150))
             screen.blit(input_text, (SCREEN_WIDTH//2 - 150, 300))
