@@ -81,7 +81,7 @@ def submit_score():
     try:
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO scores (username, score) VALUES (%s, %s)",
+            "INSERT INTO scores (player_name, score) VALUES (%s, %s)",
             (username, score)
         )
         conn.commit()
@@ -107,7 +107,7 @@ def leaderboard():
     try:
         cur = conn.cursor()
         cur.execute("""
-            SELECT username, score
+            SELECT player_name, score
             FROM scores
             ORDER BY score DESC
             LIMIT 10;
