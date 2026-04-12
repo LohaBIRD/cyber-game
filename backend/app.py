@@ -94,8 +94,8 @@ def submit_score():
         return jsonify({"message": "Score submitted successfully"}), 200
 
     except Exception as e:
-        print("❌ Error inserting score:", e)
-        return jsonify({"error": "Failed to insert score"}), 500
+        print("❌ FULL ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
 
 # 📊 Get leaderboard
 @app.route("/leaderboard", methods=["GET"])
