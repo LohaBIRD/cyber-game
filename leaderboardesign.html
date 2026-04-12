@@ -14,6 +14,7 @@
 async function loadLeaderboard() {
     const res = await fetch("https://leaderboard-api-e1y7.onrender.com/leaderboard");
     const data = await res.json();
+    console.log(data);
 
     const container = document.getElementById("leaderboard");
     container.innerHTML = "";

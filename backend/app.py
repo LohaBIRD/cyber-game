@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
 import psycopg2
+from flask_cors import CORS
 
 # ✅ Load environment variables FIRST
 load_dotenv()
@@ -17,6 +18,7 @@ if not DATABASE_URL:
 
 # ✅ Flask setup
 app = Flask(__name__)
+CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ✅ Database connection helper
