@@ -7,6 +7,9 @@ import drone
 import requests 
 import threading 
 
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 700
+
 API_URL = "https://leaderboard-api-e1y7.onrender.com"
 
 def submit_score(player, score):
@@ -61,7 +64,7 @@ info = pygame.display.Info()
 SCREEN_WIDTH = info.current_w
 SCREEN_HEIGHT = info.current_h
 try:
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 except pygame.error as e:
     print(f"Failed to set display mode: {e}")
     sys.exit(1) 
@@ -170,11 +173,16 @@ except Exception as e:
 
 def main():
     clock = pygame.time.Clock()
+    font = pygame.font.Font(None, 60)
+    small_font = pygame.font.Font(None, 30)
     leaderboard = []
     last_fetch_time = 0
     running = True    
-    state = 'question' 
+    state = 'start' 
     score_sent = False
+    
+    player_number = ""
+    player_name = ""
 
     current_question_text = ""
     current_options = []
@@ -321,10 +329,14 @@ def main():
     current_max_x = section_length
     
     while running:
+        
 
+    
+
+    # 🔥 YOUR EXISTING CODE CONTINUES
         if state == 'game_over' and not score_sent:
             print("🔥 Sending score:", score)
-            submit_score("player1", score)
+            submit_score("player" + player_number, score)
             score_sent = True
 
         delta_time = clock.get_time()
@@ -348,87 +360,108 @@ def main():
             if current_x < SCREEN_WIDTH:
                 pygame.draw.rect(screen, GRASS_GREEN, (current_x, ground, SCREEN_WIDTH - current_x, 20))
 
+       
         for event in pygame.event.get():
+
+    # ALWAYS HANDLE QUIT
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE: 
+
+            # =========================
+            # START SCREEN INPUT
+            # =========================
+            if state == "start":
+                if event.type == pygame.KEYDOWN:
+
+                    if event.unicode.isdigit():
+                        player_number += event.unicode
+
+                    elif event.key == pygame.K_BACKSPACE:
+                        player_number = player_number[:-1]
+
+                    elif event.key == pygame.K_RETURN and player_number != "":
+                        state = "question"
+
+                continue  # STOP everything else
+
+
+            # =========================
+            # GAME INPUT
+            # =========================
+            if event.type == pygame.KEYDOWN:
+
+                if event.key == pygame.K_ESCAPE:
                     running = False
-                if state == 'question':
+
+                if state == "question":
+
                     if event.key == pygame.K_SPACE and on_ground:
                         character_vy = jump_power
                         on_ground = False
                         want_to_fall = False
+
                     elif event.key == pygame.K_SPACE and can_double_jump and not on_ground:
                         character_vy = jump_power
                         can_double_jump = False
-                        want_to_fall = False
+
                     elif event.key == pygame.K_DOWN and on_ground:
                         want_to_fall = True
                         on_ground = False
-                
-                elif state == 'popup_question':
+
+                elif state == "popup_question":
+
                     selected = -1
-                    if event.key == pygame.K_1 or event.key == pygame.K_a:
+
+                    if event.key == pygame.K_1:
                         selected = 0
-                    elif event.key == pygame.K_2 or event.key == pygame.K_b:
+                    elif event.key == pygame.K_2:
                         selected = 1
-                    elif event.key == pygame.K_3 or event.key == pygame.K_c:
+                    elif event.key == pygame.K_3:
                         selected = 2
-                    
+
                     if selected != -1:
                         selected_answer_text = current_options[selected]
+
                         if selected_answer_text == current_correct_answer:
                             feedback = "Correct!"
                             score += 1
                         else:
                             feedback = f"Incorrect. Correct was: {current_correct_answer}"
-                            drone.trigger_flight() # Drone trigger on wrong answer
-                        
-                        state = 'feedback'
+                            drone.trigger_flight()
+
+                        state = "feedback"
                         feedback_timer = 4000
-                
-                elif state == 'life_lost':
+
+                elif state == "life_lost":
                     if event.key == pygame.K_r:
                         level_reset()
-                        state = 'question'
-                elif state == 'game_over':
+                        state = "question"
+
+                elif state == "game_over":
                     if event.key == pygame.K_r:
-                        state = 'question'
+                        state = "question"
                         score = 0
                         hearts = 3
-                        feedback = ''
-                        feedback_timer = 0
-                        level_reset() 
+                        level_reset()
                     elif event.key == pygame.K_q:
                         running = False
-
-            elif event.type == pygame.JOYBUTTONDOWN and joystick:
-                if state == 'question':
-                    if event.button == 0:
-                        character_vy = jump_power
-                        on_ground = False
-                
-                elif state == 'popup_question':
-                    selected = -1
-                    if event.button == 0: 
-                        selected = 0
-                    elif event.button == 1: 
-                        selected = 1
-                    elif event.button == 2: 
-                        selected = 2
-                    
-                    if selected != -1:
-                        selected_answer_text = current_options[selected]
-                        if selected_answer_text == current_correct_answer:
-                            feedback = "Correct!"
-                            score += 1
-                        else:
-                            feedback = f"Incorrect. Correct was: {current_correct_answer}"
-                            drone.trigger_flight() # Drone trigger on wrong answer
                         
-                        state = 'feedback'
-                        feedback_timer = 4000
+                        if state == "start":
+                            screen.fill((10, 10, 30))
+
+                            font = pygame.font.Font(None, 80)
+                            small_font = pygame.font.Font(None, 40)
+
+                            title = font.render("DRONE ATTACK", True, (255, 255, 255))
+                            input_text = font.render(player_number, True, (0, 255, 0))
+                            hint = small_font.render("Enter ID - Press ENTER", True, (200, 200, 200))
+
+                            screen.blit(title, (SCREEN_WIDTH//2 - 250, 150))
+                            screen.blit(input_text, (SCREEN_WIDTH//2 - 50, 300))
+                            screen.blit(hint, (SCREEN_WIDTH//2 - 250, 400))
+
+                            pygame.display.flip()
+                            continue
 
         if state == 'question':
             died_this_frame = False
@@ -645,7 +678,19 @@ def main():
                         current_correct_answer = q_tuple[1][0] 
                         random.shuffle(current_options) 
                         break
+        if state == "start":
+            screen.fill((10, 10, 30))
 
+            title = font.render("DRONE ATTACK", True, (255, 255, 255))
+            input_text = font.render("Player" + player_number, True, (0, 255, 0))
+            hint = small_font.render("Enter numbers - Press ENTER", True, (200, 200, 200))
+
+            screen.blit(title, (SCREEN_WIDTH//2 - 250, 150))
+            screen.blit(input_text, (SCREEN_WIDTH//2 - 150, 300))
+            screen.blit(hint, (SCREEN_WIDTH//2 - 250, 400))
+
+            pygame.display.flip()
+            continue
         draw_text(f"SCORE: {score}", small_font, YELLOW, 10, 10)
         draw_hearts(hearts, SCREEN_WIDTH - 100, 10)
 
