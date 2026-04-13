@@ -103,6 +103,19 @@ document.addEventListener("keydown", (event) => {
         panel.classList.remove("hidden");
         setAdminStatus("Admin panel unlocked.");
         secretBuffer = "";
+let eqPresses = [];
+document.addEventListener("keydown", (event) => {
+    if (event.key !== "=") return;
+
+    const now = Date.now();
+    eqPresses.push(now);
+    eqPresses = eqPresses.filter((time) => now - time < 2000);
+
+    if (eqPresses.length >= 3) {
+        const panel = document.getElementById("adminPanel");
+        panel.classList.remove("hidden");
+        setAdminStatus("Admin panel unlocked.");
+        eqPresses = [];
     }
 });
 
