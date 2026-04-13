@@ -83,6 +83,26 @@ function setAdminStatus(message, isError = false) {
     status.style.color = isError ? "#ff4da6" : "#66ff66";
 }
 
+let secretBuffer = "";
+document.addEventListener("keydown", (event) => {
+    const isEqualsKey =
+        event.key === "=" ||
+        event.code === "Equal" ||
+        event.code === "NumpadEqual";
+
+    if (!isEqualsKey) {
+        secretBuffer = "";
+        return;
+    }
+
+    secretBuffer += "=";
+    secretBuffer = secretBuffer.slice(-3);
+
+    if (secretBuffer === "===") {
+        const panel = document.getElementById("adminPanel");
+        panel.classList.remove("hidden");
+        setAdminStatus("Admin panel unlocked.");
+        secretBuffer = "";
 let eqPresses = [];
 document.addEventListener("keydown", (event) => {
     if (event.key !== "=") return;
