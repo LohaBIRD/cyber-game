@@ -14,6 +14,7 @@
 async function loadLeaderboard() {
     const res = await fetch("https://leaderboard-api-e1y7.onrender.com/leaderboard");
     const data = await res.json();
+    console.log("DATA FROM API:", data);
     console.log(data);
 
     const container = document.getElementById("leaderboard");
@@ -45,6 +46,7 @@ async function loadLeaderboard() {
 setInterval(loadLeaderboard, 5000);
 
 loadLeaderboard();
+setInterval(loadLeaderboard, 2000);
 </script>
 
 </body>
