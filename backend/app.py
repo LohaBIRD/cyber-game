@@ -83,6 +83,8 @@ def submit_score():
 
     try:
         cur = conn.cursor()
+        # Keep only one row per player_name to prevent duplicates
+        cur.execute("DELETE FROM scores WHERE player_name = %s", (username,))
         cur.execute(
             "INSERT INTO scores (player_name, score) VALUES (%s, %s)",
             (username, score)
