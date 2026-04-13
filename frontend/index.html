@@ -84,38 +84,39 @@ function setAdminStatus(message, isError = false) {
 }
 
 let secretBuffer = "";
+let lastSecretTapAt = 0;
+
+function unlockAdminPanel() {
+    const panel = document.getElementById("adminPanel");
+    panel.classList.remove("hidden");
+    setAdminStatus("Admin panel unlocked.");
+}
+
 document.addEventListener("keydown", (event) => {
     const isEqualsKey =
         event.key === "=" ||
+        event.key === "+" ||
         event.code === "Equal" ||
-        event.code === "NumpadEqual";
+        event.code === "NumpadEqual" ||
+        event.code === "NumpadAdd";
+
+    const now = Date.now();
+    if (now - lastSecretTapAt > 2000) {
+        secretBuffer = "";
+    }
 
     if (!isEqualsKey) {
         secretBuffer = "";
         return;
     }
 
+    lastSecretTapAt = now;
     secretBuffer += "=";
     secretBuffer = secretBuffer.slice(-3);
 
     if (secretBuffer === "===") {
-        const panel = document.getElementById("adminPanel");
-        panel.classList.remove("hidden");
-        setAdminStatus("Admin panel unlocked.");
+        unlockAdminPanel();
         secretBuffer = "";
-let eqPresses = [];
-document.addEventListener("keydown", (event) => {
-    if (event.key !== "=") return;
-
-    const now = Date.now();
-    eqPresses.push(now);
-    eqPresses = eqPresses.filter((time) => now - time < 2000);
-
-    if (eqPresses.length >= 3) {
-        const panel = document.getElementById("adminPanel");
-        panel.classList.remove("hidden");
-        setAdminStatus("Admin panel unlocked.");
-        eqPresses = [];
     }
 });
 
