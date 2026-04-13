@@ -42,7 +42,7 @@ def init_db():
         cur.execute("""
             CREATE TABLE IF NOT EXISTS scores (
                 id SERIAL PRIMARY KEY,
-                username TEXT NOT NULL,
+                player_name TEXT NOT NULL,
                 score INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
