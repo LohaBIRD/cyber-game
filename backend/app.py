@@ -83,6 +83,8 @@ def submit_score():
 
     try:
         cur = conn.cursor()
+        # Keep only one row per player_name to prevent duplicates
+        cur.execute("DELETE FROM scores WHERE player_name = %s", (username,))
         cur.execute(
             "INSERT INTO scores (player_name, score) VALUES (%s, %s)",
             (username, score)
@@ -130,7 +132,59 @@ def leaderboard():
         print("❌ Error fetching leaderboard:", e)
         return jsonify({"error": "Failed to fetch leaderboard"}), 500
 
+# 🧰 Admin: reset all scores
+@app.route("/admin/reset_scores", methods=["POST"])
+def reset_scores():
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({"error": "Database connection failed"}), 500
+
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM scores;")
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        # broadcast empty leaderboard
+        socketio.emit("new_score", {"user": "__admin__", "score": 0})
+
+        return jsonify({"message": "All scores have been reset"}), 200
+    except Exception as e:
+        print("❌ Error resetting scores:", e)
+        return jsonify({"error": "Failed to reset scores"}), 500
+
+# 🧰 Admin: delete a specific player's scores
+@app.route("/admin/delete_player", methods=["POST"])
+def delete_player_scores():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    username = data.get("user")
+    if not username:
+        return jsonify({"error": "Missing user"}), 400
+
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({"error": "Database connection failed"}), 500
+
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM scores WHERE player_name = %s;", (username,))
+        deleted_rows = cur.rowcount
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "message": f"Deleted scores for {username}",
+            "deleted_rows": deleted_rows
+        }), 200
+    except Exception as e:
+        print("❌ Error deleting player scores:", e)
+        return jsonify({"error": "Failed to delete player scores"}), 500
+
 # 🚀 Run app (for local dev only)
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=5000)
-
