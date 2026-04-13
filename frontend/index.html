@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Cyber Leaderboard</title>
+    <title>DRONE ATTACK Leaderboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1 class="title">⚡ CYBER ARCADE ⚡</h1>
+<h1 class="title">🚁 DRONE ATTACK 🚁</h1>
 
 <div id="leaderboard"></div>
 
@@ -53,7 +53,9 @@ async function loadLeaderboard() {
     const row = document.createElement("div");
     row.className = "entry";
 
-    if (index === 0) row.classList.add("gold");
+    if (index === 0) {
+        row.classList.add("gold", "first-place");
+    }
     if (index === 1) row.classList.add("silver");
     if (index === 2) row.classList.add("bronze");
 
@@ -219,9 +221,41 @@ body {
     transition: 0.25s;
 }
 
+.first-place {
+    position: relative;
+    transform: scale(1.08);
+    border: 2px solid #ffd700;
+    background: linear-gradient(90deg, rgba(255,215,0,0.15), rgba(255,255,255,0.06));
+    box-shadow: 0 0 28px rgba(255, 215, 0, 0.85), 0 0 55px rgba(255, 0, 255, 0.35);
+    animation: firstPulse 1.2s ease-in-out infinite alternate;
+}
+
+.first-place::before {
+    content: "👑 FIRST PLACE";
+    position: absolute;
+    top: -14px;
+    right: 14px;
+    font-size: 0.75rem;
+    background: #111;
+    color: #ffd700;
+    border: 1px solid #ffd700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.08em;
+}
+
+@keyframes firstPulse {
+    from { box-shadow: 0 0 18px rgba(255, 215, 0, 0.7), 0 0 30px rgba(255, 0, 255, 0.25); }
+    to { box-shadow: 0 0 32px rgba(255, 215, 0, 1), 0 0 65px rgba(255, 0, 255, 0.5); }
+}
+
 .entry:hover {
     transform: scale(1.05);
     box-shadow: 0 0 25px #ff00ff;
+}
+
+.first-place:hover {
+    transform: scale(1.11);
 }
 
 .rank {
