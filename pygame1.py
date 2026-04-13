@@ -10,7 +10,7 @@ import threading
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 700
 
-API_URL = "https://leaderboard-api-e1y7.onrender.com"
+API_URL = "https://cyber-game-uu4p.onrender.com"
 
 def submit_score(player, score):
     def send():
