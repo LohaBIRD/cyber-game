@@ -83,20 +83,53 @@ def submit_score():
 
     try:
         cur = conn.cursor()
-        # Keep only one row per player_name to prevent duplicates
-        cur.execute("DELETE FROM scores WHERE player_name = %s", (username,))
+        # Safety cleanup in case older data already has duplicates for this player
+        cur.execute("""
+            DELETE FROM scores
+            WHERE player_name = %s
+              AND id NOT IN (
+                SELECT id FROM scores
+                WHERE player_name = %s
+                ORDER BY score DESC, created_at DESC, id DESC
+                LIMIT 1
+              );
+        """, (username, username))
+
         cur.execute(
-            "INSERT INTO scores (player_name, score) VALUES (%s, %s)",
-            (username, score)
+            "SELECT score FROM scores WHERE player_name = %s ORDER BY score DESC LIMIT 1",
+            (username,)
         )
+        existing = cur.fetchone()
+
+        leaderboard_changed = False
+
+        if existing:
+            existing_score = existing[0]
+            if score > existing_score:
+                cur.execute(
+                    "UPDATE scores SET score = %s WHERE player_name = %s",
+                    (score, username)
+                )
+                leaderboard_changed = True
+        else:
+            if score > 0:
+                cur.execute(
+                    "INSERT INTO scores (player_name, score) VALUES (%s, %s)",
+                    (username, score)
+                )
+                leaderboard_changed = True
+
         conn.commit()
         cur.close()
         conn.close()
 
-        # 🔔 Emit leaderboard update
-        socketio.emit("new_score", {"user": username, "score": score})
+        # 🔔 Emit leaderboard update only when changed
+        if leaderboard_changed:
+            socketio.emit("new_score", {"user": username, "score": score})
 
-        return jsonify({"message": "Score submitted successfully"}), 200
+        if leaderboard_changed:
+            return jsonify({"message": "Score submitted successfully"}), 200
+        return jsonify({"message": "Score ignored (not a new personal best)"}), 200
 
     except Exception as e:
         print("❌ FULL ERROR:", str(e))
