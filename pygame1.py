@@ -43,6 +43,15 @@ def get_leaderboard():
     except Exception as e:
         print("Failed to fetch leaderboard:", e)
         return []
+
+def reset_scores_admin():
+    try:
+        response = requests.post(f"{API_URL}/admin/reset_scores", timeout=3)
+        if response.status_code == 200:
+            return True, "Scores reset!"
+        return False, f"Reset failed: {response.status_code}"
+    except Exception as e:
+        return False, f"Reset error: {e}"
     
 try:
     pygame.init()
@@ -180,6 +189,10 @@ def main():
     running = True    
     state = 'start' 
     score_sent = False
+    admin_sequence = ""
+    admin_panel_visible = False
+    admin_message = ""
+    admin_message_timer = 0
     
     player_number = ""
     player_name = ""
@@ -376,6 +389,40 @@ def main():
     # ALWAYS HANDLE QUIT
             if event.type == pygame.QUIT:
                 running = False
+
+            if event.type == pygame.KEYDOWN:
+                is_equals_press = (
+                    event.key in (pygame.K_EQUALS, pygame.K_KP_EQUALS, pygame.K_PLUS, pygame.K_KP_PLUS)
+                    or event.unicode in ("=", "+")
+                )
+
+                if is_equals_press:
+                    admin_sequence = (admin_sequence + "=")[-3:]
+                    if admin_sequence == "===":
+                        admin_panel_visible = not admin_panel_visible
+                        admin_sequence = ""
+                        admin_message = "Admin panel opened" if admin_panel_visible else "Admin panel closed"
+                        admin_message_timer = 180
+                else:
+                    admin_sequence = ""
+
+                if admin_panel_visible:
+                    if event.key == pygame.K_h:
+                        admin_panel_visible = False
+                        admin_message = "Admin panel closed"
+                        admin_message_timer = 180
+                    elif event.key == pygame.K_r:
+                        ok, msg = reset_scores_admin()
+                        admin_message = msg
+                        admin_message_timer = 240
+                        if ok:
+                            leaderboard = get_leaderboard()
+                            score = 0
+                    elif event.key == pygame.K_l:
+                        leaderboard = get_leaderboard()
+                        admin_message = "Leaderboard refreshed"
+                        admin_message_timer = 180
+                    continue
 
             # =========================
             # START SCREEN INPUT
@@ -865,6 +912,24 @@ def main():
             restart_quit_surface = small_font.render("PRESS R TO RESTART OR Q TO QUIT", True, WHITE)
             restart_quit_width = restart_quit_surface.get_size()[0]
             draw_text("PRESS R TO RESTART OR Q TO QUIT", small_font, WHITE, (SCREEN_WIDTH - restart_quit_width) // 2, 250)
+
+        if admin_panel_visible:
+            overlay_width = min(700, SCREEN_WIDTH - 80)
+            overlay_height = 220
+            overlay_x = (SCREEN_WIDTH - overlay_width) // 2
+            overlay_y = 60
+
+            pygame.draw.rect(screen, (0, 0, 0), (overlay_x, overlay_y, overlay_width, overlay_height))
+            pygame.draw.rect(screen, CYAN, (overlay_x, overlay_y, overlay_width, overlay_height), 3)
+
+            draw_text("ADMIN PANEL", font, CYAN, overlay_x + 20, overlay_y + 20)
+            draw_text("R = Reset Scores", small_font, WHITE, overlay_x + 20, overlay_y + 80)
+            draw_text("L = Reload Leaderboard", small_font, WHITE, overlay_x + 20, overlay_y + 115)
+            draw_text("H = Hide Panel", small_font, WHITE, overlay_x + 20, overlay_y + 150)
+
+        if admin_message_timer > 0:
+            admin_message_timer -= 1
+            draw_text(admin_message, small_font, YELLOW, 20, 20)
 
         pygame.display.flip()
         clock.tick(60)

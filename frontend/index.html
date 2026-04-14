@@ -1,21 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Cyber Leaderboard</title>
+    <title>DRONE ATTACK Leaderboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1 class="title">⚡ CYBER ARCADE ⚡</h1>
+<h1 class="title">🚁 DRONE ATTACK 🚁</h1>
 
 <div id="leaderboard"></div>
 
+<section id="adminPanel" class="admin-panel hidden">
+    <h2>🛠 ADMIN PANEL</h2>
+    <p class="admin-note">Unlocked with secret combo: <strong>===</strong></p>
+    <div class="admin-controls">
+        <button id="resetScoresBtn">Reset All Scores</button>
+        <button id="toggleRefreshBtn">Pause Auto Refresh</button>
+        <button id="exportBtn">Export Leaderboard JSON</button>
+    </div>
+    <div class="admin-controls inline">
+        <input id="deletePlayerInput" type="text" placeholder="Player name to delete" />
+        <button id="deletePlayerBtn">Delete Player</button>
+    </div>
+    <label class="admin-slider">
+        Refresh interval:
+        <input id="refreshRate" type="range" min="1000" max="15000" step="500" value="5000" />
+        <span id="refreshRateLabel">5000ms</span>
+    </label>
+    <p id="adminStatus"></p>
+</section>
+
 <script>
+const API_BASE = "https://leaderboard-api-e1y7.onrender.com";
+let refreshIntervalMs = 5000;
+let refreshTimer = null;
+let autoRefreshEnabled = true;
+let cachedLeaderboard = [];
+
 async function loadLeaderboard() {
-    const res = await fetch("https://leaderboard-api-e1y7.onrender.com/leaderboard");
+    const res = await fetch(`${API_BASE}/leaderboard`);
     const data = await res.json();
-    console.log("DATA FROM API:", data);
-    console.log(data);
+    cachedLeaderboard = data;
 
     const container = document.getElementById("leaderboard");
     container.innerHTML = "";
@@ -28,7 +53,9 @@ async function loadLeaderboard() {
     const row = document.createElement("div");
     row.className = "entry";
 
-    if (index === 0) row.classList.add("gold");
+    if (index === 0) {
+        row.classList.add("gold", "first-place");
+    }
     if (index === 1) row.classList.add("silver");
     if (index === 2) row.classList.add("bronze");
 
@@ -42,11 +69,122 @@ async function loadLeaderboard() {
     });
 }
 
-// refresh every 5 seconds 🔥
-setInterval(loadLeaderboard, 5000);
+function startAutoRefresh() {
+    clearInterval(refreshTimer);
+    if (autoRefreshEnabled) {
+        refreshTimer = setInterval(loadLeaderboard, refreshIntervalMs);
+    }
+}
 
 loadLeaderboard();
-setInterval(loadLeaderboard, 2000);
+startAutoRefresh();
+
+function setAdminStatus(message, isError = false) {
+    const status = document.getElementById("adminStatus");
+    status.textContent = message;
+    status.style.color = isError ? "#ff4da6" : "#66ff66";
+}
+
+let secretBuffer = "";
+let lastSecretTapAt = 0;
+
+function unlockAdminPanel() {
+    const panel = document.getElementById("adminPanel");
+    panel.classList.remove("hidden");
+    setAdminStatus("Admin panel unlocked.");
+}
+
+document.addEventListener("keydown", (event) => {
+    const isEqualsKey =
+        event.key === "=" ||
+        event.key === "+" ||
+        event.code === "Equal" ||
+        event.code === "NumpadEqual" ||
+        event.code === "NumpadAdd";
+
+    const now = Date.now();
+    if (now - lastSecretTapAt > 2000) {
+        secretBuffer = "";
+    }
+
+    if (!isEqualsKey) {
+        secretBuffer = "";
+        return;
+    }
+
+    lastSecretTapAt = now;
+    secretBuffer += "=";
+    secretBuffer = secretBuffer.slice(-3);
+
+    if (secretBuffer === "===") {
+        unlockAdminPanel();
+        secretBuffer = "";
+    }
+});
+
+document.getElementById("resetScoresBtn").addEventListener("click", async () => {
+    if (!confirm("Reset ALL scores? This cannot be undone.")) return;
+    try {
+        const res = await fetch(`${API_BASE}/admin/reset_scores`, { method: "POST" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Reset failed");
+        await loadLeaderboard();
+        setAdminStatus("All scores reset successfully.");
+    } catch (error) {
+        setAdminStatus(error.message, true);
+    }
+});
+
+document.getElementById("deletePlayerBtn").addEventListener("click", async () => {
+    const input = document.getElementById("deletePlayerInput");
+    const playerName = input.value.trim();
+    if (!playerName) {
+        setAdminStatus("Please enter a player name first.", true);
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/admin/delete_player`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user: playerName })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Delete failed");
+        await loadLeaderboard();
+        input.value = "";
+        setAdminStatus(`Deleted ${data.deleted_rows} score(s) for ${playerName}.`);
+    } catch (error) {
+        setAdminStatus(error.message, true);
+    }
+});
+
+document.getElementById("toggleRefreshBtn").addEventListener("click", (event) => {
+    autoRefreshEnabled = !autoRefreshEnabled;
+    event.target.textContent = autoRefreshEnabled ? "Pause Auto Refresh" : "Resume Auto Refresh";
+    setAdminStatus(autoRefreshEnabled ? "Auto refresh resumed." : "Auto refresh paused.");
+    startAutoRefresh();
+});
+
+document.getElementById("refreshRate").addEventListener("input", (event) => {
+    refreshIntervalMs = Number(event.target.value);
+    document.getElementById("refreshRateLabel").textContent = `${refreshIntervalMs}ms`;
+    startAutoRefresh();
+    setAdminStatus(`Refresh interval set to ${refreshIntervalMs}ms.`);
+});
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(cachedLeaderboard, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "leaderboard.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setAdminStatus("Exported leaderboard.json");
+});
 </script>
 
 </body>
@@ -73,6 +211,7 @@ body {
     margin: 12px auto;
     padding: 15px;
     width: 60%;
+    font-size: 1.35rem;
 
     border: 1px solid #00ffe1;
     box-shadow: 0 0 15px #00ffe1;
@@ -83,9 +222,41 @@ body {
     transition: 0.25s;
 }
 
+.first-place {
+    position: relative;
+    transform: scale(1.08);
+    border: 2px solid #ffd700;
+    background: linear-gradient(90deg, rgba(255,215,0,0.15), rgba(255,255,255,0.06));
+    box-shadow: 0 0 28px rgba(255, 215, 0, 0.85), 0 0 55px rgba(255, 0, 255, 0.35);
+    animation: firstPulse 1.2s ease-in-out infinite alternate;
+}
+
+.first-place::before {
+    content: "👑 FIRST PLACE";
+    position: absolute;
+    top: -14px;
+    right: 14px;
+    font-size: 0.75rem;
+    background: #111;
+    color: #ffd700;
+    border: 1px solid #ffd700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.08em;
+}
+
+@keyframes firstPulse {
+    from { box-shadow: 0 0 18px rgba(255, 215, 0, 0.7), 0 0 30px rgba(255, 0, 255, 0.25); }
+    to { box-shadow: 0 0 32px rgba(255, 215, 0, 1), 0 0 65px rgba(255, 0, 255, 0.5); }
+}
+
 .entry:hover {
     transform: scale(1.05);
     box-shadow: 0 0 25px #ff00ff;
+}
+
+.first-place:hover {
+    transform: scale(1.11);
 }
 
 .rank {
@@ -97,11 +268,13 @@ body {
     flex: 1;
     text-align: left;
     padding-left: 20px;
+    font-size: 1.4rem;
 }
 
 .score {
     color: #00ff88;
     font-weight: bold;
+    font-size: 1.45rem;
 }
 
 .empty {
@@ -134,5 +307,56 @@ body {
 
 .entry {
     animation: pulse 2s infinite;
+}
+
+.admin-panel {
+    width: min(860px, 85vw);
+    margin: 30px auto 40px;
+    padding: 20px;
+    border: 1px solid #ff00ff;
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.4);
+    background: rgba(255, 0, 255, 0.08);
+    border-radius: 12px;
+}
+
+.hidden {
+    display: none;
+}
+
+.admin-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.admin-controls.inline input {
+    min-width: 250px;
+}
+
+.admin-panel button,
+.admin-panel input {
+    background: #080818;
+    color: #00ffe1;
+    border: 1px solid #00ffe1;
+    padding: 8px 12px;
+    font-family: monospace;
+}
+
+.admin-panel button:hover {
+    box-shadow: 0 0 12px #00ffe1;
+    cursor: pointer;
+}
+
+.admin-slider {
+    display: block;
+    margin-top: 15px;
+}
+
+#adminStatus {
+    min-height: 20px;
+    margin-top: 12px;
+    font-weight: bold;
 }
 </style>
