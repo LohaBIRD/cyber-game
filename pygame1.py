@@ -850,7 +850,7 @@ def main():
 
             draw_text("Press 1, 2, or 3 to Answer", font, YELLOW, box_x + 20, footer_y + 40)
             if joystick:
-                draw_text("Joystick: K1, K2, or K3 to Answer", font, CYAN, box_x + 20, footer_y + 10)
+                draw_text("Think Carefully!", font, CYAN, box_x + 20, footer_y + 10)
 
         elif state == 'feedback':
             feedback_timer -= delta_time
